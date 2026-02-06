@@ -228,7 +228,10 @@ async function checkout() {
 
     // 2. WhatsApp Integration / Sharing
     const phoneNumber = "5493812466931";
-    const message = `Hola FENIX! ✨\n\nAcabo de generar mi pedido por $${total.toLocaleString()}.\nAdjunto el PDF con los detalles.\n\nEspero confirmación.`;
+
+    // Build detailed text message
+    let orderDetails = cart.map(item => `• ${item.name} (x${item.quantity}): $${(item.price * item.quantity).toLocaleString()}`).join('\n');
+    const message = `Hola FENIX! ✨\n\nQuiero realizar el siguiente pedido:\n\n${orderDetails}\n\n*Total a pagar: $${total.toLocaleString()}*\n\n(He generado el comprobante PDF para mi control).`;
 
     // Try Web Share API first (For Mobile/Modern Browsers)
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -240,12 +243,12 @@ async function checkout() {
             .then(() => console.log('Compartido con éxito'))
             .catch((error) => console.log('Error al compartir', error));
     } else {
-        // Fallback for Desktop or browsers without file sharing support
+        // Fallback: Download PDF + Text Message
         doc.save(fileName);
 
         setTimeout(() => {
             const waUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
             window.open(waUrl, '_blank');
-        }, 1500);
+        }, 1000);
     }
 }
