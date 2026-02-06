@@ -155,100 +155,22 @@ function toggleCart() {
     cartSidebar.classList.toggle('open');
 }
 
-// Checkout & PDF Logic
-async function checkout() {
+// Checkout: Direct WhatsApp
+function checkout() {
     if (cart.length === 0) {
         alert("Tu carrito está vacío. Agrega productos para brillar.");
         return;
     }
 
-    // 1. Generate PDF
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    // Theme Colors for PDF
-    const goldColor = [212, 175, 55];
-    const blackColor = [20, 20, 20];
-
-    // Header
-    doc.setFillColor(...blackColor); // Black background header
-    doc.rect(0, 0, 210, 40, 'F');
-    doc.setTextColor(...goldColor); // Gold Text
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
-    doc.text("FENIX - Orden de Compra", 105, 20, null, null, "center");
-
-    // Order info
-    doc.setTextColor(0, 0, 0); // Reset text to black for body
-    doc.setFontSize(12);
-    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 14, 50);
-
-    // Table Data
-    const tableColumn = ["Producto", "Cantidad", "Precio Unit.", "Total"];
-    const tableRows = [];
-
-    cart.forEach(item => {
-        const itemTotal = item.price * item.quantity;
-        const row = [
-            item.name,
-            item.quantity.toString(),
-            `$${item.price.toLocaleString()}`,
-            `$${itemTotal.toLocaleString()}`
-        ];
-        tableRows.push(row);
-    });
-
-    // AutoTable Plugin
-    doc.autoTable({
-        head: [tableColumn],
-        body: tableRows,
-        startY: 60,
-        theme: 'grid',
-        headStyles: { fillColor: blackColor, textColor: goldColor },
-        styles: { font: "helvetica", fontSize: 10 }
-    });
-
-    // Grand Total
-    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const finalY = doc.lastAutoTable.finalY + 15;
-
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text(`Total a Pagar: $${total.toLocaleString()}`, 14, finalY);
-
-    // Footer
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text("Gracias por elegir FENIX. Tu estilo, tu renacer.", 105, 280, null, null, "center");
-
-    // Save PDF logic changed to handle Blob for sharing
-    const pdfBlob = doc.output('blob');
-    const fileName = `Pedido_Fenix_${Date.now()}.pdf`;
-    const file = new File([pdfBlob], fileName, { type: "application/pdf" });
-
-    // 2. WhatsApp Integration / Sharing
     const phoneNumber = "5493812466931";
 
     // Build detailed text message
-    let orderDetails = cart.map(item => `• ${item.name} (x${item.quantity}): $${(item.price * item.quantity).toLocaleString()}`).join('\n');
-    const message = `Hola FENIX! ✨\n\nQuiero realizar el siguiente pedido:\n\n${orderDetails}\n\n*Total a pagar: $${total.toLocaleString()}*\n\n(He generado el comprobante PDF para mi control).`;
+    let orderDetails = cart.map(item => `• *${item.name}* (x${item.quantity}): $${(item.price * item.quantity).toLocaleString()}`).join('\n');
+    const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    // Try Web Share API first (For Mobile/Modern Browsers)
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({
-            files: [file],
-            title: 'Pedido Fenix',
-            text: message
-        })
-            .then(() => console.log('Compartido con éxito'))
-            .catch((error) => console.log('Error al compartir', error));
-    } else {
-        // Fallback: Download PDF + Text Message
-        doc.save(fileName);
+    const message = `Hola FENIX! ✨\n\nQuiero realizar el siguiente pedido:\n\n${orderDetails}\n\n*Total a pagar: $${total.toLocaleString()}*`;
 
-        setTimeout(() => {
-            const waUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-            window.open(waUrl, '_blank');
-        }, 1000);
-    }
+    // Direct WhatsApp redirect
+    const waUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(waUrl, '_blank');
 }
